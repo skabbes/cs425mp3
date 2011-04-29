@@ -1,0 +1,4 @@
+*.o
+dsm
+coordinator
+*.swp
