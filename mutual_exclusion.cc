@@ -70,11 +70,28 @@ void * tokenPasser( void * arg ){
     return NULL;
 }
 
-void lock(){
+/**
+* Acquire lock (Before enter critical section)
+* @return - 1 if successfully acquire lock, otherwise, 0 is returned!
+*/
+void lock()
+{
     pthread_mutex_lock( &token );
 }
 
-void unlock(){
-    // do more than that here, update shared variables and nonsense
-    pthread_mutex_unlock( &token );
+/**
+* Release lock (Exit critical section)
+* @return - 0 if lock is release
+*/
+void unlock()
+{
+	// Update variables() we modified
+	// mutex_lock();
+
+	// passToken along
+
+
+	//releaseToken();
+	// set state to free
+	//currentState = TOKEN_FREE;
 }

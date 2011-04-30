@@ -24,11 +24,14 @@
 
 using namespace std;
 
+
 // function definitions
 int main(int argc, char ** argv);
 
 // NODE variables / properties
 int nodeId;
+int currentState = TOKEN_FREE;
+bool hasToken = false;
 
 int main(int argc, char ** argv){
     if( argc != 2){
