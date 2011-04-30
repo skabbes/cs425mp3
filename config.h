@@ -12,5 +12,6 @@ void readMemoryMapConfig(vector<int> &byteList, int id);
 void readFile(char * filename, vector<int> &keyList, vector<int> &valueList);
 void printContent(vector<int> idList, vector<int> valueList);
 int findPort(int id, vector<int> nodeList, vector<int> portList);
-
+void splitString(string str, string delim, vector<string> &results);
+void interpretCommand(string str, vector<int> &commandResult);
 #endif

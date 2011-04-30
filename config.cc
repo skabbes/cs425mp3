@@ -90,3 +90,47 @@ void printContent(vector<int> idList, vector<int> valueList)
       printf("Id: %i : %i\n", idList[i], valueList[i]);
    }
 }
+
+/**
+* Spliting string into vector of string
+* @param str : Full string
+* @param delim : Delimiter (spliter)
+* @param results: Vector result (pass by ref)
+*/
+void splitString(string str, string delim, vector<string> &results)
+{
+	int cutAt;
+	while( (cutAt = str.find_first_of(delim)) != (int) str.npos )
+	{
+		if(cutAt > 0)
+		{
+			results.push_back(str.substr(0,cutAt));
+		}
+		str = str.substr(cutAt+1);
+		
+	}
+
+	if(str.length() > 0)
+	{
+		results.push_back(str);
+	}
+}
+
+/**
+* Interpret the string command
+* @param str: string command
+* @param commandResult: stored vector int
+*/
+void interpretCommand(string str, vector<int> &commandResult)
+{
+	vector<string> results;
+	splitString(str, ":", results);
+	for (unsigned int i = 0; i < results.size(); ++i)
+	{
+
+		char* pch = (char*)malloc( sizeof( char ) *(results[i].length() +1) );
+		strcpy(pch, results[i].c_str() );
+		commandResult.push_back(atoi(pch));
+		free(pch);
+	}
+}
