@@ -55,6 +55,8 @@ uint32_t readint(int s){
 }
 
 // send an integer over a socket
+// @param : s : socket
+// @param : number : message in integer
 int sendint(int s, uint32_t number){
     uint32_t size = htonl(number);
     int amount_to_send = sizeof(size);

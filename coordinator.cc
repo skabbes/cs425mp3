@@ -47,6 +47,7 @@ int main(int argc, char ** argv){
 
 	for (unsigned int i=0; i < commandList.size(); ++i)
 	{
+		//cout << commandList[i] << endl;
 		processCommand(commandList[i]);
 	}
 	// read from command line
@@ -84,33 +85,46 @@ void processCommand(string command)
 	}
 
 	usleep(results[0]);	// sleep for n miliseconds
+
 	int nodeTarget = results[1];	// node to be executed
 	int exeComm = results[2];	// executed command
 	
+
+	int targetSocket = setup_client("localhost", findPort(nodeTarget, idList, portList));
+
 	// process command
-	if (exeComm == 1)
+	if (exeComm == ACQUIRE_LOCK)
 	{
-		// acquire lock if not held by any process
-		
-	} else if (exeComm == 2)
+		// acquire lock if not held by any process	
+		sendint(targetSocket, ACQUIRE_LOCK);
+
+	} else if (exeComm == RELEASE_LOCK)
 	{
 		// release a previously held rock
+		sendint(targetSocket, RELEASE_LOCK);
 
-	} else if (exeComm == 3)
+	} else if (exeComm == DO_WORK)
 	{
 		// Add values stored at shared memory
-	} else if (exeComm == 4)
+		sendint(targetSocket, DO_WORK);
+		sendint(targetSocket, results.size() - 3);	// send total of parameters
+		// send parameters (List of mem. locations)
+		for (unsigned int i=3; i < results.size(); ++i)
+		{
+			sendint(targetSocket, results[i]);	
+		}
+		
+	} else if (exeComm == PRINT)
 	{
 		// Print the valued stored at the memory location
 		int memLoc = results[3];
-
-		setup_client("localhost", findPort(nodeTarget, idList, portList));
-		sendint(PRINT, sizeof(PRINT));
+		sendint(targetSocket, PRINT);	// send PRINT command
+		sendint(targetSocket, memLoc);	// send Memory location
 
 	} else {
 		cout << "[Error]:Invalid Command\n";
-		return;
 	}
+	close(targetSocket);
 
 }
 
