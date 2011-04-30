@@ -35,7 +35,6 @@ int main(int argc, char ** argv){
 	 {
     	 pid[i] = launchDsm(idList[i]);
 	 }
-	 
 
     // read lines from command file and issue commands
 	 

@@ -3,10 +3,10 @@ CFLAGS = -g -Wall -O0
 LDFLAGS = -g -lpthread
 
 COORD = coordinator
-COORD_OBJ = coordinator.o socket.o config.o
+COORD_OBJ = coordinator.o socket.o 
 
 DSM = dsm
-DSM_OBJ = dsm.o socket.o config.o
+DSM_OBJ = dsm.o socket.o 
 
 all: $(DSM) $(COORD)
 
