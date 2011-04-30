@@ -17,19 +17,18 @@
 #include <sys/wait.h>
 #include <signal.h>
 
-
-
 #include "messages.h"
 #include "config.h"
 #include "socket.h"
+#include "mutual_exclusion.h"
 
 using namespace std;
 
 // function definitions
 int main(int argc, char ** argv);
-pthread_t startDetachedThread( void * (*functor)(void *), void * arg );
-pthread_t startThread( void * (*functor)(void *), void * arg );
 
+// NODE variables / properties
+int nodeId;
 
 int main(int argc, char ** argv){
     if( argc != 2){
@@ -37,18 +36,18 @@ int main(int argc, char ** argv){
        return EXIT_FAILURE;
     }
 
-    int nodeId = atoi(argv[1]);
+    nodeId = atoi(argv[1]);
 
 
 	 vector<int> nodeList, portList, byteList, socketList;		// keep track of node, port , mem_addr, and socket
 	 int socket, port;						// keep track of socket and port this nodeId owns
 
-    cout << "Started DSM with id=" << nodeId << endl;
+     cout << "Started DSM with id=" << nodeId << endl;
 
 	 // read memory_map.conf, set up variables that this node owns
 	 readMemoryMapConfig(byteList, nodeId);
 
-    // read membership.conf and determine what port to run on (including all other nodes)
+     // read membership.conf and determine what port to run on (including all other nodes)
 	 readMembershipConfig(nodeList, portList);
 
 	 port = findPort(nodeId, nodeList, portList);	// find the port that this node is running on
@@ -79,7 +78,7 @@ int main(int argc, char ** argv){
 			socketList.push_back(socket);		// this node
 		}
 	 }
-
+    
 	// I'm wondering why we don't need to accept()?? but the socket is connected
 	while(true)
 	{
@@ -89,31 +88,4 @@ int main(int argc, char ** argv){
    }
 
    return 0;
-}
-
-pthread_t startDetachedThread( void * (*functor)(void *), void * arg ){
-    pthread_attr_t DetachedAttr;
-    pthread_attr_init(&DetachedAttr);
-    pthread_attr_setdetachstate(&DetachedAttr, PTHREAD_CREATE_DETACHED);
-
-    pthread_t handler;
-    if( pthread_create(&handler, &DetachedAttr, functor, arg) ){
-        free(arg);
-        perror("pthread_create");
-    }
-    pthread_detach(handler);
-
-    // free resources for detached attribute
-    pthread_attr_destroy(&DetachedAttr);
-
-    return handler;
-}
-
-pthread_t startThread( void * (*functor)(void *), void * arg ){
-    pthread_t handler;
-    if( pthread_create(&handler, NULL, functor, arg) ){
-        free(arg);
-        perror("pthread_create");
-    }
-    return handler;
 }
