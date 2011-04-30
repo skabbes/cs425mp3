@@ -1,4 +1,7 @@
 #include "config.h"
+#include <iostream>
+#include <fstream>
+using namespace std;
 
 // read membership.config file and parse data to idList and portList
 // @param idList: List of nodeID
@@ -58,36 +61,23 @@ int findPort(int id, vector<int> nodeList, vector<int> portList)
 // @param valueList: a list of stored value corresponding to the key
 void readFile(char * filename, vector<int> &keyList, vector<int> &valueList)
 {
-   FILE *fp;  
+    ifstream file(filename);
+    int key, value;
 
-   char c;
+    if (file.is_open()){
+        while ( file.good() )
+        {
+            file >> key;
+            file >> value;
 
-   int counter = 0;
-   fp = fopen(filename, "r");
-
-   if (fp!=NULL)
-   {
-     
-      while (!feof(fp)) 
-      {
-         c = fgetc(fp);
-         if (isdigit(c))
-         {
-            counter *= 10;
-            counter += atoi(&c);
-         } else if (c==' ' || c=='\n')
-         {
-            if (c== ' ')
-            {
-               keyList.push_back(counter);
-            } else {
-               valueList.push_back(counter);
-            }         
-            counter = 0;
-         }
-      }
-      fclose(fp);
-   }
+            if( file.good() ){
+                keyList.push_back( key );
+                valueList.push_back( value );
+                cout << key << ", " << value << endl;
+            }
+        }
+        file.close();
+    }
 }
 
 // Printing content from Vectors
