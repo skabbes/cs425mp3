@@ -4,3 +4,4 @@ coordinator
 *.swp
 *.cc~
 *.conf~
+*.h~
