@@ -6,6 +6,7 @@ enum {
     DO_WORK = 3,
     PRINT = 4,
     READ,
-    WRITE
+    WRITE,
+    QUIT
 };
 #endif

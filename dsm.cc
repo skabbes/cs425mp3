@@ -27,6 +27,9 @@ using namespace std;
 
 // function definitions
 int main(int argc, char ** argv);
+pthread_t startDetachedThread( void * (*functor)(void *), void * arg );
+pthread_t startThread( void * (*functor)(void *), void * arg );
+
 
 int main(int argc, char ** argv){
     if( argc != 2){
@@ -78,12 +81,39 @@ int main(int argc, char ** argv){
 	 }
 
 	// I'm wondering why we don't need to accept()?? but the socket is connected
-	while(1)
+	while(true)
 	{
     	// get connections, launch a thread for each connection
-
-		
+        cout << "getting connections!" << endl;
+        sleep(1);
    }
 
-    return 0;
+   return 0;
+}
+
+pthread_t startDetachedThread( void * (*functor)(void *), void * arg ){
+    pthread_attr_t DetachedAttr;
+    pthread_attr_init(&DetachedAttr);
+    pthread_attr_setdetachstate(&DetachedAttr, PTHREAD_CREATE_DETACHED);
+
+    pthread_t handler;
+    if( pthread_create(&handler, &DetachedAttr, functor, arg) ){
+        free(arg);
+        perror("pthread_create");
+    }
+    pthread_detach(handler);
+
+    // free resources for detached attribute
+    pthread_attr_destroy(&DetachedAttr);
+
+    return handler;
+}
+
+pthread_t startThread( void * (*functor)(void *), void * arg ){
+    pthread_t handler;
+    if( pthread_create(&handler, NULL, functor, arg) ){
+        free(arg);
+        perror("pthread_create");
+    }
+    return handler;
 }
