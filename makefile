@@ -6,7 +6,7 @@ COORD = coordinator
 COORD_OBJ = coordinator.o socket.o config.o
 
 DSM = dsm
-DSM_OBJ = dsm.o socket.o config.o mutual_exclusion.o
+DSM_OBJ = dsm.o socket.o config.o mutual_exclusion.o thread.o
 
 all: $(DSM) $(COORD)
 

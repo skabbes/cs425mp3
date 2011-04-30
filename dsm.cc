@@ -20,6 +20,7 @@
 #include "messages.h"
 #include "config.h"
 #include "socket.h"
+#include "thread.h"
 #include "mutual_exclusion.h"
 
 using namespace std;
@@ -27,6 +28,7 @@ using namespace std;
 
 // function definitions
 int main(int argc, char ** argv);
+void  * thread_conn_handler( void * arg );
 
 // NODE variables / properties
 int nodeId;
@@ -43,7 +45,7 @@ int main(int argc, char ** argv){
 
 
 	 vector<int> nodeList, portList, byteList, socketList;		// keep track of node, port , mem_addr, and socket
-	 int socket, port;						// keep track of socket and port this nodeId owns
+	 int server, port;						// keep track of socket and port this nodeId owns
 
      cout << "Started DSM with id=" << nodeId << endl;
 
@@ -63,7 +65,7 @@ int main(int argc, char ** argv){
 
 
 	 // setup a server connection to run on that port
-	 socket = setup_server(port,&port);
+	 server = setup_server(port,&port);
 
 	 // attempt to setup connection to all nodes
 	 for (unsigned int i = 0; i < portList.size(); ++i)
@@ -74,21 +76,80 @@ int main(int argc, char ** argv){
 			while (clientSocket == 2)
 			{
 				clientSocket = setup_client("localhost", portList[i]);	
+                sendint(clientSocket, PING);
 				if (clientSocket == 2) sleep(1);	// wait for connecting node to be active
 			}
 			socketList.push_back(clientSocket);	// store socket that we are connecting to 
 		} else {
-			socketList.push_back(socket);		// this node
+			socketList.push_back(server);		// this node
 		}
 	 }
     
+    socklen_t sin_size;
+    struct sockaddr_storage their_addr;
+    char s[INET6_ADDRSTRLEN];
+
 	// I'm wondering why we don't need to accept()?? but the socket is connected
 	while(true)
 	{
-    	// get connections, launch a thread for each connection
-        cout << "getting connections!" << endl;
-        sleep(1);
-   }
+        sin_size = sizeof their_addr;
+        int new_fd = accept(server, (struct sockaddr *)&their_addr, &sin_size);
+        if (new_fd == -1) {
+            perror("accept");
+            continue;
+        }
+
+        inet_ntop(their_addr.ss_family, get_in_addr((struct sockaddr *)&their_addr), s, sizeof s);
+        cout << "Node " << nodeId << " got connection from " << s << endl;
+
+        // prepare argument for thread
+        int * arg = new int(new_fd);
+        startDetachedThread(thread_conn_handler, arg);
+    }
 
    return 0;
+}
+
+void * thread_conn_handler(void * arg){
+    int socket = *(int *)arg;
+    free(arg);
+
+    int message = readint( socket );
+    if( message == ACQUIRE_LOCK){
+        cout << "Node " << nodeId << " got ACQUIRE_LOCK message" << endl;
+    }
+    else if( message == RELEASE_LOCK){
+        cout << "Node " << nodeId << " got RELEASE_LOCK message" << endl;
+    }
+    else if( message == DO_WORK){
+        cout << "Node " << nodeId << " got DO_WORK message" << endl;
+    }
+    else if( message == PRINT){
+        cout << "Node " << nodeId << " got PRINT message" << endl;
+    }
+    else if( message == READ){
+        cout << "Node " << nodeId << " got READ message" << endl;
+    }
+    else if( message == WRITE){
+        cout << "Node " << nodeId << " got WRITE message" << endl;
+    }
+    else if( message == QUIT){
+        cout << "Node " << nodeId << " got QUIT message" << endl;
+    }
+    else if( message == TOKEN_WANT){
+        cout << "Node " << nodeId << " got TOKEN_WANT message" << endl;
+    }
+    else if( message == TOKEN_HELD){
+        cout << "Node " << nodeId << " got TOKEN_HELD message" << endl;
+    }
+    else if( message == TOKEN_FREE){
+        cout << "Node " << nodeId << " got TOKEN_FREE message" << endl;
+    }
+    else if( message == PING){
+        cout << "Node " << nodeId << " got PING message" << endl;
+    }
+    else{
+        cout << "Unrecognized message" << endl;
+    }
+    close(socket);
 }
