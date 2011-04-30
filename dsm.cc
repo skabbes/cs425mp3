@@ -25,10 +25,75 @@
 
 using namespace std;
 
+// Declaration of variables
+int currentState = TOKEN_FREE;
+bool hasToken = false;
+
 // function definitions
 int main(int argc, char ** argv);
 pthread_t startDetachedThread( void * (*functor)(void *), void * arg );
 pthread_t startThread( void * (*functor)(void *), void * arg );
+int lock();
+int unlock();
+void receiveToken();
+void releaseToken();
+void passTokenAlong();
+
+
+/**
+* Acquire lock (Before enter critical section)
+* @return - 1 if successfully acquire lock, otherwise, 0 is returned!
+*/
+int lock()
+{
+	currentState = TOKEN_WANT;
+	
+	if (hasToken)
+	{
+		// if we have token
+		// set state to "held" and then return
+		currentState = TOKEN_HELD;
+		return 1;
+	}
+	return 0;
+}
+
+/**
+* Release lock (Exit critical section)
+* @return - 0 if lock is release
+*/
+int unlock()
+{
+	// Update variables() we modified
+	// mutex_lock();
+
+	// passToken along
+
+
+	releaseToken();
+	// set state to free
+	currentState = TOKEN_FREE;
+	return 0;
+}
+
+void passTokenAlong()
+{
+
+}
+
+
+void receiveToken()
+{
+	hasToken = true;
+}
+
+void releaseToken()
+{
+	hasToken = false;
+}
+
+
+
 
 
 int main(int argc, char ** argv){

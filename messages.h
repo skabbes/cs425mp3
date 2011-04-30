@@ -7,6 +7,9 @@ enum {
     PRINT = 4,
     READ,
     WRITE,
-    QUIT
+    QUIT,
+	 TOKEN_WANT,
+	 TOKEN_HELD,
+	 TOKEN_FREE
 };
 #endif
