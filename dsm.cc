@@ -91,6 +91,10 @@ int main(int argc, char ** argv){
    return 0;
 }
 
+/**
+* Stop threads and free resources
+*
+*/
 pthread_t startDetachedThread( void * (*functor)(void *), void * arg ){
     pthread_attr_t DetachedAttr;
     pthread_attr_init(&DetachedAttr);
@@ -109,6 +113,10 @@ pthread_t startDetachedThread( void * (*functor)(void *), void * arg ){
     return handler;
 }
 
+/**
+* Start thread
+* 
+*/
 pthread_t startThread( void * (*functor)(void *), void * arg ){
     pthread_t handler;
     if( pthread_create(&handler, NULL, functor, arg) ){
