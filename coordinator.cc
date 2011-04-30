@@ -37,7 +37,7 @@ int main(int argc, char ** argv){
 
 	 for (unsigned int i=0; i < idList.size(); ++i)
 	 {
-    	 //pid[i] = launchDsm(idList[i]);
+    	 pid[i] = launchDsm(idList[i]);
 	 }
 	 
 
@@ -107,7 +107,7 @@ void processCommand(string command)
 	{
 		// Add values stored at shared memory
 		sendint(targetSocket, DO_WORK);
-		sendint(targetSocket, results.size() - 3);	// send total of parameters
+		sendint(targetSocket, results.size() - 3);	// send the number of total of parameters
 		// send parameters (List of mem. locations)
 		for (unsigned int i=3; i < results.size(); ++i)
 		{
