@@ -13,10 +13,15 @@
 
 using namespace std;
 
+
+vector<int> idList, portList;		// keep track of contents from membership.confs
+vector<string> commandList;
+
 // function definitions
 int main(int argc, char ** argv);
 pid_t launchDsm(int nodeId);
 bool processCommand(stringstream &is);
+void processCommand(string command);
 
 
 // Main function
@@ -26,15 +31,8 @@ int main(int argc, char ** argv){
        return EXIT_FAILURE;
     }
 
-    // char * filename = argv[1];
-
-	 vector<int> idList, portList;
-	 string input;				// Command input
-
-
     // read membership.conf and launch processes
 	 readMembershipConfig(idList, portList);
-
 	 pid_t pid[idList.size()];
 
 	 for (unsigned int i=0; i < idList.size(); ++i)
@@ -44,6 +42,16 @@ int main(int argc, char ** argv){
 	 
 
     // read lines from command file and issue commands
+	 char * filename = argv[1];
+	 readCommandFile(filename, commandList);
+
+	for (unsigned int i=0; i < commandList.size(); ++i)
+	{
+		processCommand(commandList[i]);
+	}
+	// read from command line
+	/**
+	 string input;				// Command input
 	 bool shouldQuit = false;
 	 while( cin && !shouldQuit )
 	 {
@@ -51,34 +59,31 @@ int main(int argc, char ** argv){
         getline(cin, input);
         is << input;
         shouldQuit = processCommand(is);
-    }
+    }**/
 
     return 0;
 }
 
 /**
-* processCommand received from the command line
-* @param is: Streamcommand
-* @return True: If no need to process command anymore
+* Process command (Generic)
+* @param: command: command line
 */
-bool processCommand(stringstream &is)
+void processCommand(string command)
 {
-	printf("Process Command Begins \n");
-	string command;
-   vector<int> results;
+	printf("Process Command from command file\n");
 
-	command = is.str();
-	
+	vector<int> results;
+
 	//interpret command
 	interpretCommand(command, results); 
 	
 	if (results.size() < 3)
 	{
 		cout << "[Error]:Invalid Command\n";
-		return false;
+		return;
 	}
 
-	sleep(results[0]);	// sleep for n seconds
+	usleep(results[0]);	// sleep for n miliseconds
 	int nodeTarget = results[1];	// node to be executed
 	int exeComm = results[2];	// executed command
 	
@@ -96,16 +101,33 @@ bool processCommand(stringstream &is)
 		// Add values stored at shared memory
 	} else if (exeComm == 4)
 	{
-		
+		// Print the valued stored at the memory location
+		int memLoc = results[3];
+
+		setup_client("localhost", findPort(nodeTarget, idList, portList));
+		sendint(PRINT, sizeof(PRINT));
+
 	} else {
 		cout << "[Error]:Invalid Command\n";
-		return false;
+		return;
 	}
 
+}
+
+/**
+* processCommand received from the command line
+* @param is: Streamcommand
+* @return True: If no need to process command anymore
+*/
+bool processCommand(stringstream &is)
+{
+	printf("Process Command Begins \n");
+	string command;
+	command = is.str();
+	
+	processCommand(command);
 
 	return false;
-
-
 }
 
 

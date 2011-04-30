@@ -79,6 +79,28 @@ void readFile(string filename, vector<int> &keyList, vector<int> &valueList)
     }
 }
 
+// Read command file
+// @param filename : filename
+// @param command: stored list of commands
+void readCommandFile(char* filename, vector<string> &command)
+{
+	 ifstream file(filename);
+	 string line;
+    if (file.is_open()){
+        while ( file.good() )
+        {
+            file >> line;
+
+            if( file.good() )
+				{
+                command.push_back(line);
+            }
+        }
+        file.close();
+    }
+	
+}
+
 // Printing content from Vectors
 // @param keyList: a list of stored key (i.e. ID)
 // @param valueList: a list of stored value corresponding to the key
