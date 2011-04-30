@@ -2,3 +2,5 @@
 dsm
 coordinator
 *.swp
+*.cc~
+*.conf~
