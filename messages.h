@@ -8,8 +8,9 @@ enum {
     READ,
     WRITE,
     QUIT,
-	 TOKEN_WANT,
-	 TOKEN_HELD,
-	 TOKEN_FREE
+    PING,
+    TOKEN_WANT,
+    TOKEN_HELD,
+    TOKEN_FREE
 };
 #endif

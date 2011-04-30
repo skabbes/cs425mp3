@@ -59,9 +59,9 @@ int findPort(int id, vector<int> nodeList, vector<int> portList)
 // @param filename
 // @param keyList: a list of stored key (i.e. ID)
 // @param valueList: a list of stored value corresponding to the key
-void readFile(char * filename, vector<int> &keyList, vector<int> &valueList)
+void readFile(string filename, vector<int> &keyList, vector<int> &valueList)
 {
-    ifstream file(filename);
+    ifstream file(filename.c_str());
     int key, value;
 
     if (file.is_open()){
@@ -73,7 +73,6 @@ void readFile(char * filename, vector<int> &keyList, vector<int> &valueList)
             if( file.good() ){
                 keyList.push_back( key );
                 valueList.push_back( value );
-                cout << key << ", " << value << endl;
             }
         }
         file.close();

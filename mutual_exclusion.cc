@@ -2,16 +2,18 @@
 
 #include <vector>
 #include <iostream>
-#include <cstdlib>
-#include <cstdio>
-#include <errno.h>
 #include <pthread.h>
+#include <cstdlib>
 
 using namespace std;
 
 pthread_mutex_t token = PTHREAD_MUTEX_INITIALIZER;
 pthread_t tokenThread;
 
+/**
+ * Initialize the distributed mutual exclusion code
+ * This should only be called after all servers are up and running
+ */
 void mutual_exclusion_init( vector<int> const & nodes, vector<int> const & ports, int id ){
 
      // find minimum node (to determine which node holds token first)
@@ -32,36 +34,21 @@ void mutual_exclusion_init( vector<int> const & nodes, vector<int> const & ports
      }
 }
 
-void mutual_exclusion_destroy(){
+void tokenReceived(){
     pthread_mutex_unlock( &token );
+    // I think mutex maintain a queue for first come first serve ordering
+    // but need to double check on that
+    pthread_mutex_lock( &token );
+
+    // send the token to the next guy
+}
+
+/**
+ * When you quit, make sure to destroy the token passer
+ */
+void mutual_exclusion_destroy(){
     pthread_cancel( tokenThread );
-}
-
-pthread_t startDetachedThread( void * (*functor)(void *), void * arg ){
-    pthread_attr_t DetachedAttr;
-    pthread_attr_init(&DetachedAttr);
-    pthread_attr_setdetachstate(&DetachedAttr, PTHREAD_CREATE_DETACHED);
-
-    pthread_t handler;
-    if( pthread_create(&handler, &DetachedAttr, functor, arg) ){
-        free(arg);
-        perror("pthread_create");
-    }
-    pthread_detach(handler);
-
-    // free resources for detached attribute
-    pthread_attr_destroy(&DetachedAttr);
-
-    return handler;
-}
-
-pthread_t startThread( void * (*functor)(void *), void * arg ){
-    pthread_t handler;
-    if( pthread_create(&handler, NULL, functor, arg) ){
-        free(arg);
-        perror("pthread_create");
-    }
-    return handler;
+    pthread_mutex_unlock( &token );
 }
 
 void * tokenPasser( void * arg ){
