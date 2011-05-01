@@ -62,6 +62,11 @@ int main(int argc, char ** argv){
         shouldQuit = processCommand(is);
     }**/
 
+	 while(1)
+		{
+
+}
+
     return 0;
 }
 
