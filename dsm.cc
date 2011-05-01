@@ -92,6 +92,7 @@ int main(int argc, char ** argv){
 	// I'm wondering why we don't need to accept()?? but the socket is connected
 	while(true)
 	{
+		 // accept() socket operation on non socket????
         sin_size = sizeof their_addr;
         int new_fd = accept(server, (struct sockaddr *)&their_addr, &sin_size);
         if (new_fd == -1) 

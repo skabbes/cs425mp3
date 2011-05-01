@@ -37,7 +37,7 @@ int main(int argc, char ** argv){
 
 	 for (unsigned int i=0; i < idList.size(); ++i)
 	 {
-    	 pid[i] = launchDsm(idList[i]);
+		pid[i] = launchDsm(idList[i]);
 	 }
 	 
 
@@ -71,7 +71,7 @@ int main(int argc, char ** argv){
 */
 void processCommand(string command)
 {
-	printf("Process Command from command file\n");
+	//printf("Process Command from command file\n");
 
 	vector<int> results;
 
