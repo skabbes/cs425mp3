@@ -53,6 +53,25 @@ int findPort(int id, vector<int> nodeList, vector<int> portList)
 	return -99;
 }
 
+/**
+* Check if the node Id has the memory address
+* @param : id : targetNode
+* @param : memAddr: target memory addr
+* @param : byteList: list of bytelist (memAddr) that this id owns
+* @return - Return corresponding index to the mem addr in the vector, Otherwise, -1 is returned!
+*/
+int hasMemoryAddr(int id, int memAddr, vector<int> byteList)
+{
+   for (unsigned int i=0; i < byteList.size(); ++i)
+	{
+		if (byteList[i] == memAddr)
+		{
+			return i;
+		}
+	}
+   return -1;
+}
+
 
 
 // Read file and parse content

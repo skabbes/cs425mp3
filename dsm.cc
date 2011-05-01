@@ -35,6 +35,13 @@ int nodeId;
 int currentState = TOKEN_FREE;
 bool hasToken = false;
 
+
+vector<int> nodeList, portList, byteList, socketList;		// keep track of node, port , mem_addr, and socket
+int server, port;						// keep track of socket and port this nodeId owns
+
+/**
+* Main function
+*/
 int main(int argc, char ** argv){
     if( argc != 2){
        cerr << "Usage " << argv[0] << " <nodeId>" << endl;
@@ -42,10 +49,6 @@ int main(int argc, char ** argv){
     }
 
     nodeId = atoi(argv[1]);
-
-
-	 vector<int> nodeList, portList, byteList, socketList;		// keep track of node, port , mem_addr, and socket
-	 int server, port;						// keep track of socket and port this nodeId owns
 
      cout << "Started DSM with id=" << nodeId << endl;
 
@@ -119,18 +122,66 @@ void * thread_conn_handler(void * arg){
     int message = readint( socket );
     if( message == ACQUIRE_LOCK){
         cout << "Node " << nodeId << " got ACQUIRE_LOCK message" << endl;
+
+        // if already has the token
+        if (hasToken)
+        {
+            // acquire the token
+            currentState = TOKEN_HELD;
+        } else {
+            // notify that this node wants the token
+            sendint(socket, TOKEN_WANT);
+        }
+       
+         
     }
     else if( message == RELEASE_LOCK){
         cout << "Node " << nodeId << " got RELEASE_LOCK message" << endl;
+ 
+       if (hasToken)
+        {
+            // release lock and token
+            hasToken = false;
+            currentState = TOKEN_FREE;
+            // notify that token is now free
+            sendint(socket, TOKEN_FREE);
+        }
     }
     else if( message == DO_WORK){
         cout << "Node " << nodeId << " got DO_WORK message" << endl;
+        int totalsize = readint(socket);
+        int params[totalsize];
+        for (unsigned int i =0 ; i < totalsize ; ++i)
+        {
+               params[i] = readint(socket);
+        }
+        
+        int value = params[totalsize-1];
+        
+
     }
     else if( message == PRINT){
         cout << "Node " << nodeId << " got PRINT message" << endl;
+        int memLoc = readint(socket);
+        
+
     }
     else if( message == READ){
         cout << "Node " << nodeId << " got READ message" << endl;
+        int memLoc = readint(socket);
+
+        // Check if this node has this memory address
+        int indexMemAddr = hasMemoryAddr(nodeId, memLoc, byteList);
+
+        if (indexMemAddr != -1)
+        {
+            // send back value at memaddr
+
+            //sendint(socket, 
+            sendint(socket, byteList[indexMemAddr]);  // Send back to map address
+        }
+        // return message
+        //sendint(socket, 
     }
     else if( message == WRITE){
         cout << "Node " << nodeId << " got WRITE message" << endl;
@@ -140,15 +191,34 @@ void * thread_conn_handler(void * arg){
     }
     else if( message == TOKEN_WANT){
         cout << "Node " << nodeId << " got TOKEN_WANT message" << endl;
+        if (hasToken && currentState == TOKEN_FREE)
+        {
+            // release token
+            hasToken = false;
+            sendint(socket, TOKEN_FREE);
+        }
     }
     else if( message == TOKEN_HELD){
         cout << "Node " << nodeId << " got TOKEN_HELD message" << endl;
+
+        if (currentState == TOKEN_WANT)
+        {
+            sendint(socket, TOKEN_WANT);
+        }
     }
     else if( message == TOKEN_FREE){
         cout << "Node " << nodeId << " got TOKEN_FREE message" << endl;
+
+        if (!hasToken && currentState == TOKEN_WANT)
+        {
+            currentState = TOKEN_HELD;
+            hasToken = true;
+        }
+
     }
     else if( message == PING){
         cout << "Node " << nodeId << " got PING message" << endl;
+
     }
     else{
         cout << "Unrecognized message" << endl;

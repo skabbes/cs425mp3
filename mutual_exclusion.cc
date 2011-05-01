@@ -7,12 +7,15 @@
 
 using namespace std;
 
-pthread_mutex_t token = PTHREAD_MUTEX_INITIALIZER;
-pthread_t tokenThread;
+pthread_mutex_t token = PTHREAD_MUTEX_INITIALIZER; // token
+pthread_t tokenThread;  // token thread
 
 /**
  * Initialize the distributed mutual exclusion code
  * This should only be called after all servers are up and running
+ * @param : nodes: List of nodes
+ * @param : ports: List of ports corresponding to nodes
+ * @param : id : Node identifier
  */
 void mutual_exclusion_init( vector<int> const & nodes, vector<int> const & ports, int id ){
 
@@ -34,6 +37,9 @@ void mutual_exclusion_init( vector<int> const & nodes, vector<int> const & ports
      }
 }
 
+/**
+* Upon receiving a token
+*/
 void tokenReceived(){
     pthread_mutex_unlock( &token );
     // I think mutex maintain a queue for first come first serve ordering
