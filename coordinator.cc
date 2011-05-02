@@ -48,6 +48,8 @@ int main(int argc, char ** argv){
 	for (unsigned int i=0; i < commandList.size(); ++i)
 	{
 		//cout << commandList[i] << endl;
+
+		// Should I wait until the command is completely executed???
 		processCommand(commandList[i]);
 	}
 	// read from command line
@@ -62,10 +64,10 @@ int main(int argc, char ** argv){
         shouldQuit = processCommand(is);
     }**/
 
-	 while(1)
-		{
+	while(1)
+   {
 
-}
+   }
 
     return 0;
 }

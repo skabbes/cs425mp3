@@ -175,7 +175,7 @@ void * thread_conn_handler(void * arg){
 
         if (indexMemAddr != -1)
         {
-            // send back value at memaddr
+            // send back value at memaddr How???
 
             //sendint(socket, 
             sendint(socket, byteList[indexMemAddr]);  // Send back to map address
@@ -185,12 +185,15 @@ void * thread_conn_handler(void * arg){
     }
     else if( message == WRITE){
         cout << "Node " << nodeId << " got WRITE message" << endl;
+
+			
     }
     else if( message == QUIT){
         cout << "Node " << nodeId << " got QUIT message" << endl;
     }
     else if( message == TOKEN_WANT){
         cout << "Node " << nodeId << " got TOKEN_WANT message" << endl;
+
         if (hasToken && currentState == TOKEN_FREE)
         {
             // release token
