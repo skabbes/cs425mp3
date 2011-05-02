@@ -202,6 +202,10 @@ void * thread_conn_handler(void * arg){
         cout << "Node " << nodeId << " got PRINT message" << endl;
         int memLoc = readint(socket);
         int value = readByte(memLoc);
+		// wait until get token TODO
+
+		// print things out
+		cout << "Value " << value << " at mem.location " << memLoc << endl;
     }
     else if( message == READ){
         cout << "Node " << nodeId << " got READ message" << endl;
@@ -214,26 +218,8 @@ void * thread_conn_handler(void * arg){
 
 		  int memLoc = readint(socket);	// where to store	(memAddr)
 		  int storeValue = readint(socket);	// what to store (value)
+		  writeByte(memLoc, storeValue);
 
-		  int indexMemAddr = hasMemoryAddr(nodeId,memLoc, byteList);
-
-			// if this node has this mem addr
-		  if (indexMemAddr != -1)
-		  {
-				// store the value
-				modified[memLoc] = storeValue;
-		  } else {
-				// otherwise, go to the node that has
-				
-				// *** Not sure if this is necessary ***
-		/**
-				int otherSocket = setup_client("localhost", otherBytes[memLoc]);
-				sendint(otherSocket, WRITE);
-				sendint(otherSocket, memLoc);
-				sendint(otherSocket, storeValue);
-				close(otherSocket);
-**/
-		  }
 			
     }
     else if( message == QUIT){
@@ -294,14 +280,14 @@ void writeByte(int addr, int value){
 
     // do I have it?
     it = myBytes.find(addr);
-    if( it != map::end ){
+    if( it != myBytes.end() ){
         myBytes[addr] = value;
         return;
     }
 
     // have I cached it, if so, get it out of the friggin cache, and into modified
     it = unmodified.find(addr);
-    if( it != map::end ){
+    if( it != unmodified.end() ){
         unmodified.erase( it );
         modified[addr] = value;
         return;
@@ -319,25 +305,25 @@ int readByte(int addr){
 
     // do I have it?
     it = myBytes.find(addr);
-    if( it != map::end ){
+    if( it != myBytes.end() ){
         return it->second;
     }
 
     // have I cached it?
-    it = readCache.find(addr);
-    if( it != map::end ){
+    it = unmodified.find(addr);
+    if( it != unmodified.end() ){
         return it->second;
     }
 
     // have I modified it?
     it = modified.find(addr);
-    if( it != map::end ){
+    if( it != modified.end() ){
         return it->second;
     }
 
     // we have to look it up :(
-    it = modified.find(addr);
-    if( it != map::end ){
+    it = otherBytes.find(addr);
+    if( it != otherBytes.end() ){
         int port = it->second;
         int socket = setup_client("localhost", port);
         sendint(socket, READ);
