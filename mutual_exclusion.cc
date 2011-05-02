@@ -71,29 +71,10 @@ void tokenReceived(){
     close( socket );
 }
 
-<<<<<<< HEAD
-/**
- * When you quit, make sure to destroy the token passer
- */
-void mutual_exclusion_destroy()
-{
-    pthread_cancel( tokenThread );
-    pthread_mutex_unlock( &token );
-}
-
-void * tokenPasser( void * arg )
-{
-    //int nextPort = *(int*)arg;
-    free(arg);
-    return NULL;
-}
-
-=======
 void mutual_exclusion_destroy(){
     pthread_mutex_unlock( &token );
 }
 
->>>>>>> c27f025f80530f40742b8c001d4200002ab88344
 /**
 * Acquire lock (Before enter critical section)
 */

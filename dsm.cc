@@ -122,27 +122,11 @@ void * thread_conn_handler(void * arg){
     free(arg);
 
     int message = readint( socket );
+
     if( message == ACQUIRE_LOCK){
         cout << "Node " << nodeId << " got ACQUIRE_LOCK message" << endl;
-<<<<<<< HEAD
-
-        // if already has the token
-        if (hasToken)
-        {
-            // acquire the token
-            currentState = TOKEN_HELD;
-        } else {
-            // notify that this node wants the token
-
-				// notify the next node
-            sendint(socket, TOKEN_WANT);
-        }
-       
-         
-=======
         lock();
         cout << "Node " << nodeId << " has acquired lock " << endl;
->>>>>>> c27f025f80530f40742b8c001d4200002ab88344
     }
     else if( message == RELEASE_LOCK){
         cout << "Node " << nodeId << " got RELEASE_LOCK message" << endl;
@@ -162,10 +146,8 @@ void * thread_conn_handler(void * arg){
 		  // add value to to mem location
 
 
-		  sendint(socket, 
+		  //sendint(socket, 
 		  // store result to the next param
-        
-
     }
     else if( message == PRINT){
         cout << "Node " << nodeId << " got PRINT message" << endl;
