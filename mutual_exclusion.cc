@@ -43,7 +43,6 @@ void mutual_exclusion_init( vector<int> const & nodes, vector<int> const & ports
 
      if( minNode == id ){
          // only the minimum node will be unlocked
-         pthread_mutex_unlock( &token );
          cout << "Node id = " << id << " has the token" << endl;
          tokenReceived();
      } else {
