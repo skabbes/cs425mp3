@@ -39,6 +39,7 @@ int main(int argc, char ** argv){
 	 {
 		pid[i] = launchDsm(idList[i]);
 	 }
+     sleep(5);
 	 
 
     // read lines from command file and issue commands
@@ -91,7 +92,7 @@ void processCommand(string command)
 		return;
 	}
 
-	usleep(results[0]);	// sleep for n miliseconds
+	usleep(results[0] * 1000);	// sleep for n miliseconds
 
 	int nodeTarget = results[1];	// node to be executed
 	int exeComm = results[2];	// executed command
