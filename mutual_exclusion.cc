@@ -52,12 +52,14 @@ void tokenReceived(){
 /**
  * When you quit, make sure to destroy the token passer
  */
-void mutual_exclusion_destroy(){
+void mutual_exclusion_destroy()
+{
     pthread_cancel( tokenThread );
     pthread_mutex_unlock( &token );
 }
 
-void * tokenPasser( void * arg ){
+void * tokenPasser( void * arg )
+{
     //int nextPort = *(int*)arg;
     free(arg);
     return NULL;

@@ -130,6 +130,8 @@ void * thread_conn_handler(void * arg){
             currentState = TOKEN_HELD;
         } else {
             // notify that this node wants the token
+
+				// notify the next node
             sendint(socket, TOKEN_WANT);
         }
        
@@ -150,13 +152,18 @@ void * thread_conn_handler(void * arg){
     else if( message == DO_WORK){
         cout << "Node " << nodeId << " got DO_WORK message" << endl;
         int totalsize = readint(socket);
-        int params[totalsize];
+        int params[totalsize];			// keep track of nodes given
         for (unsigned int i =0 ; i < totalsize ; ++i)
         {
                params[i] = readint(socket);
         }
         
         int value = params[totalsize-1];
+		  // add value to to mem location
+
+
+		  sendint(socket, 
+		  // store result to the next param
         
 
     }
@@ -177,7 +184,7 @@ void * thread_conn_handler(void * arg){
         {
             // send back value at memaddr How???
 
-            //sendint(socket, 
+            //sendint(socket, MAP_VALUE); 
             sendint(socket, byteList[indexMemAddr]);  // Send back to map address
         }
         // return message
