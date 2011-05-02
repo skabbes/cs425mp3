@@ -124,25 +124,8 @@ void * thread_conn_handler(void * arg){
     int message = readint( socket );
     if( message == ACQUIRE_LOCK){
         cout << "Node " << nodeId << " got ACQUIRE_LOCK message" << endl;
-<<<<<<< HEAD
-
-        // if already has the token
-        if (hasToken)
-        {
-            // acquire the token
-            currentState = TOKEN_HELD;
-        } else {
-            // notify that this node wants the token
-
-				// notify the next node
-            sendint(socket, TOKEN_WANT);
-        }
-       
-         
-=======
         lock();
         cout << "Node " << nodeId << " has acquired lock " << endl;
->>>>>>> c27f025f80530f40742b8c001d4200002ab88344
     }
     else if( message == RELEASE_LOCK){
         cout << "Node " << nodeId << " got RELEASE_LOCK message" << endl;
@@ -161,9 +144,6 @@ void * thread_conn_handler(void * arg){
         int value = params[totalsize-1];
 		  // add value to to mem location
 
-
-		  sendint(socket, 
-		  // store result to the next param
         
 
     }
@@ -183,12 +163,10 @@ void * thread_conn_handler(void * arg){
         if (indexMemAddr != -1)
         {
             // send back value at memaddr How???
-
+				
             //sendint(socket, MAP_VALUE); 
             sendint(socket, byteList[indexMemAddr]);  // Send back to map address
         }
-        // return message
-        //sendint(socket, 
     }
     else if( message == WRITE){
         cout << "Node " << nodeId << " got WRITE message" << endl;
@@ -203,6 +181,10 @@ void * thread_conn_handler(void * arg){
         tokenReceived();
         cout << "Node " << nodeId << " has the token" << endl;
     }
+
+
+
+// Proabaly dont' want anything after this line
 
     else if( message == TOKEN_WANT){
         cout << "Node " << nodeId << " got TOKEN_WANT message" << endl;
