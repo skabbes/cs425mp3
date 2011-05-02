@@ -30,11 +30,18 @@ using namespace std;
 // function definitions
 int main(int argc, char ** argv);
 void  * thread_conn_handler( void * arg );
+int readByte(int addr);
+void writeBye(int addr, int value);
+
+
 
 // NODE variables / properties
 int nodeId;
 int currentState = TOKEN_FREE;
 bool hasToken = false;
+
+// a data "cache" for unmodified bytes (memory_address -> value)
+map<int, int> unmodified;
 
 // a data "cache" for modified bytes (memory_address -> value)
 map<int, int> modified;
@@ -155,6 +162,7 @@ void * thread_conn_handler(void * arg){
         unlock();
     }
     else if( message == DO_WORK){
+
         cout << "Node " << nodeId << " got DO_WORK message" << endl;
         int totalsize = readint(socket);
         int params[totalsize];			// keep track of nodes given
@@ -162,9 +170,14 @@ void * thread_conn_handler(void * arg){
         {
                params[i] = readint(socket);
         }
-        
+
+        int destinationAddr = params[0];
         int value = params[totalsize-1];
-		  // add value to to mem location
+        for (int i=1; i<totalsize-1; ++i)
+        {
+               value += readByte(params[i]);
+        }
+        writeByte( destinationAddr, value );
 
     }
     else if( message == PRINT){
@@ -240,4 +253,65 @@ void * thread_conn_handler(void * arg){
     }
     close(socket);
     return NULL;
+}
+
+// abstracts writing to a byte, updates the local copies as necessary
+void writeBye(int addr, int value){
+    map<int, int>::iterator it;
+
+    // do I have it?
+    it = myBytes.find(addr);
+    if( it != map::end ){
+        myBytes[addr] = value;
+        return;
+    }
+
+    // have I cached it, if so, get it out of the friggin cache, and into modified
+    it = unmodified.find(addr);
+    if( it != map::end ){
+        unmodified.erase( it );
+        modified[addr] = value;
+        return;
+    }
+
+
+    // otherwise, let's just cache the value for now
+    modified[addr] = value;
+}
+
+// abstracts reading a byte.  Grabs it from its local copy if possible, or a cached
+// version.  As a last resort, it sends a socket connection to read the value
+int readByte(int addr){
+    map<int, int>::iterator it;
+
+    // do I have it?
+    it = myBytes.find(addr);
+    if( it != map::end ){
+        return it->second;
+    }
+
+    // have I cached it?
+    it = readCache.find(addr);
+    if( it != map::end ){
+        return it->second;
+    }
+
+    // have I modified it?
+    it = modified.find(addr);
+    if( it != map::end ){
+        return it->second;
+    }
+
+    // we have to look it up :(
+    it = modified.find(addr);
+    if( it != map::end ){
+        int port = it->second;
+        int socket = setup_client("localhost", port);
+        sendint(socket, READ);
+        int value = readint(socket);
+        unmodified[addr] = value;
+        close(socket);
+        return value; 
+    }
+    return -1;
 }
