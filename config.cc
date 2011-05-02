@@ -100,6 +100,27 @@ void readFile(string filename, vector<int> &keyList, vector<int> &valueList)
     }
 }
 
+// read a file into a map
+map<int, int> readFileMap(string filename){
+    map<int, int> result;
+    ifstream file(filename.c_str());
+    int key, value;
+
+    if (file.is_open()){
+        while ( file.good() )
+        {
+            file >> key;
+            file >> value;
+
+            if( file.good() ){
+                result[key] = value; 
+            }
+        }
+        file.close();
+    }
+    return result;
+}
+
 // Read command file
 // @param filename : filename
 // @param command: stored list of commands

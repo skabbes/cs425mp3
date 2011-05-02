@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <sstream>
+#include <map>
 
 #include <cstdlib>
 #include <cstdio>
@@ -35,8 +36,17 @@ int nodeId;
 int currentState = TOKEN_FREE;
 bool hasToken = false;
 
+// a data "cache" for modified bytes (memory_address -> value)
+map<int, int> modified;
 
-vector<int> nodeList, portList, byteList, socketList;		// keep track of node, port , mem_addr, and socket
+// the bytes that I own (memory_address -> value)
+map<int, int> myBytes;
+
+// the bytes that others own (memory_address -> port_number)
+map<int, int> otherBytes;
+
+
+vector<int> nodeList, portList, socketList;		// keep track of node, port , and socket
 int server, port;						// keep track of socket and port this nodeId owns
 
 /**
@@ -52,13 +62,24 @@ int main(int argc, char ** argv){
 
      cout << "Started DSM with id=" << nodeId << endl;
 
-	 // read memory_map.conf, set up variables that this node owns
-	 readMemoryMapConfig(byteList, nodeId);
-
      // read membership.conf and determine what port to run on (including all other nodes)
 	 readMembershipConfig(nodeList, portList);
 
 	 port = findPort(nodeId, nodeList, portList);	// find the port that this node is running on
+    
+     // read in
+     map<int, int> allBytes = readFileMap("memory_map.conf");
+     map<int, int>::iterator it;
+     for ( it=allBytes.begin() ; it != allBytes.end(); it++ ){
+        int addr = it->first;
+        int id = it->second;
+
+        if( id == nodeId ){
+            myBytes[addr] = 0;
+        } else {
+            otherBytes[addr] = findPort(id, nodeList, portList);
+        }
+     }
 
 	 if (port == -99)
 	 {
@@ -137,7 +158,7 @@ void * thread_conn_handler(void * arg){
         cout << "Node " << nodeId << " got DO_WORK message" << endl;
         int totalsize = readint(socket);
         int params[totalsize];			// keep track of nodes given
-        for (unsigned int i =0 ; i < totalsize ; ++i)
+        for (int i =0 ; i < totalsize ; ++i)
         {
                params[i] = readint(socket);
         }
@@ -149,13 +170,10 @@ void * thread_conn_handler(void * arg){
     else if( message == PRINT){
         cout << "Node " << nodeId << " got PRINT message" << endl;
         int memLoc = readint(socket);
-        
-
     }
     else if( message == READ){
         cout << "Node " << nodeId << " got READ message" << endl;
         int memLoc = readint(socket);
-
         // Check if this node has this memory address
         int indexMemAddr = hasMemoryAddr(nodeId, memLoc, byteList);
 
