@@ -71,7 +71,6 @@ void tokenReceived(){
     close( socket );
 }
 
-
 void mutual_exclusion_destroy(){
     pthread_mutex_unlock( &token );
 }

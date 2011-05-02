@@ -122,6 +122,7 @@ void * thread_conn_handler(void * arg){
     free(arg);
 
     int message = readint( socket );
+
     if( message == ACQUIRE_LOCK){
         cout << "Node " << nodeId << " got ACQUIRE_LOCK message" << endl;
         lock();
@@ -143,8 +144,6 @@ void * thread_conn_handler(void * arg){
         
         int value = params[totalsize-1];
 		  // add value to to mem location
-
-        
 
     }
     else if( message == PRINT){
