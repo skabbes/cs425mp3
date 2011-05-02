@@ -31,7 +31,7 @@ using namespace std;
 int main(int argc, char ** argv);
 void  * thread_conn_handler( void * arg );
 int readByte(int addr);
-void writeBye(int addr, int value);
+void writeByte(int addr, int value);
 
 
 
@@ -160,15 +160,7 @@ void * thread_conn_handler(void * arg){
         cout << "Node " << nodeId << " got RELEASE_LOCK message" << endl;
         // do other stuff before actually unlocking, like update variables and such which were modified
 		 
-		 // Update the actual bytes with cache
-		/**
-		 map<int, int>::iterator it;
-     	 for ( it=myBytes.begin() ; it != myBytes.end(); it++ )
-		 {
-				int memAddr = it->first();
-				myBytes[memAddr] = modified[memAddr];
-		 }	
-**/
+		  
         unlock();
     }
     else if( message == DO_WORK){
@@ -193,6 +185,11 @@ void * thread_conn_handler(void * arg){
     else if( message == PRINT){
         cout << "Node " << nodeId << " got PRINT message" << endl;
         int memLoc = readint(socket);
+		  // wait until get token
+
+		  // print things out
+		  cout << "Value " << myBytes[memLoc] << " at mem.location " << memLoc << endl;
+		  
     }
     else if( message == READ){
         cout << "Node " << nodeId << " got READ message" << endl;
@@ -205,26 +202,8 @@ void * thread_conn_handler(void * arg){
 
 		  int memLoc = readint(socket);	// where to store	(memAddr)
 		  int storeValue = readint(socket);	// what to store (value)
+		  writeByte(memLoc, storeValue);
 
-		  int indexMemAddr = hasMemoryAddr(nodeId,memLoc, byteList);
-
-			// if this node has this mem addr
-		  if (indexMemAddr != -1)
-		  {
-				// store the value
-				modified[memLoc] = storeValue;
-		  } else {
-				// otherwise, go to the node that has
-				
-				// *** Not sure if this is necessary ***
-		/**
-				int otherSocket = setup_client("localhost", otherBytes[memLoc]);
-				sendint(otherSocket, WRITE);
-				sendint(otherSocket, memLoc);
-				sendint(otherSocket, storeValue);
-				close(otherSocket);
-**/
-		  }
 			
     }
     else if( message == QUIT){
@@ -280,7 +259,7 @@ void * thread_conn_handler(void * arg){
 }
 
 // abstracts writing to a byte, updates the local copies as necessary
-void writeBye(int addr, int value){
+void writeByte(int addr, int value){
     map<int, int>::iterator it;
 
     // do I have it?
@@ -315,7 +294,7 @@ int readByte(int addr){
     }
 
     // have I cached it?
-    it = readCache.find(addr);
+    it = unmodified.find(addr);
     if( it != map::end ){
         return it->second;
     }
