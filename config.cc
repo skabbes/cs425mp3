@@ -55,27 +55,6 @@ int findPort(int id, vector<int> nodeList, vector<int> portList)
 	return -99;
 }
 
-/**
-* Check if the node Id has the memory address
-* @param : id : targetNode
-* @param : memAddr: target memory addr
-* @param : byteList: list of bytelist (memAddr) that this id owns
-* @return - Return corresponding index to the mem addr in the vector, Otherwise, -1 is returned!
-*/
-int hasMemoryAddr(int id, int memAddr, vector<int> byteList)
-{
-   for (unsigned int i=0; i < byteList.size(); ++i)
-	{
-		if (byteList[i] == memAddr)
-		{
-			return i;
-		}
-	}
-   return -1;
-}
-
-
-
 // Read file and parse content
 // @param filename
 // @param keyList: a list of stored key (i.e. ID)
@@ -100,7 +79,8 @@ void readFile(string filename, vector<int> &keyList, vector<int> &valueList)
     }
 }
 
-// read a file into a map
+// read a file (with two integers per line) into a map
+// keyed on the first integer of the line
 map<int, int> readFileMap(string filename){
     map<int, int> result;
     ifstream file(filename.c_str());

@@ -46,10 +46,9 @@ void mutual_exclusion_init( vector<int> const & nodes, vector<int> const & ports
      nextPort = ports[nextIndex];
 
      if( minNode == id ){
-         // only the minimum node will be unlocked
          tokenReceived();
      } else {
-         // only the minimum node will be unlocked
+         // non-minimum nodes do not have the token (and thus the mutex should be locked)
          pthread_mutex_lock( &token );
      }
 }
@@ -63,8 +62,6 @@ void tokenReceived(){
     // potentially wait some time?
     usleep( TOKEN_DELAY * 1000 );
 
-    // I think mutex maintain a queue for first come first serve ordering
-    // but need to double check on that
     pthread_mutex_lock( &token );
 
     // send token along to next guy

@@ -364,8 +364,6 @@ void processQueue(){
          writeByte( destinationAddr, value );
       } else if( command == QUIT ){
          int socket = params[1];
-         cout << "Messages " << MESSAGES_SENT << endl;
-         cout << "Mutex Messages " << MUTEX_MESSAGES_SENT << endl;
          sendint(socket, MUTEX_MESSAGES_SENT);
          sendint(socket, MESSAGES_SENT);
          shouldQuit = true;
