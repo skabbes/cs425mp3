@@ -37,8 +37,7 @@ void writeByte(int addr, int value);
 
 // NODE variables / properties
 int nodeId;
-int currentState = TOKEN_FREE;
-bool hasToken = false;
+pthread_mutex_t waitForToken = PTHREAD_MUTEX_INITIALIZER; // token
 
 // a data "cache" for unmodified bytes (memory_address -> value)
 map<int, int> unmodified;
@@ -64,6 +63,8 @@ int main(int argc, char ** argv){
        cerr << "Usage " << argv[0] << " <nodeId>" << endl;
        return EXIT_FAILURE;
     }
+
+    pthread_mutex_lock( &waitForToken );
 
     nodeId = atoi(argv[1]);
 
@@ -153,6 +154,7 @@ void * thread_conn_handler(void * arg){
 
     if( message == ACQUIRE_LOCK){
         cout << "Node " << nodeId << " got ACQUIRE_LOCK message" << endl;
+        pthread_mutex_unlock( &waitForToken );
         lock();
         cout << "Node " << nodeId << " has acquired lock " << endl;
     }
@@ -177,11 +179,15 @@ void * thread_conn_handler(void * arg){
 
          // we don't need to send messages to modify the actual unmodifed bytes
          unmodified.erase( unmodified.begin(), unmodified.end() );
+
+         pthread_mutex_lock( &waitForToken );
          unlock();
     }
     else if( message == DO_WORK){
 
         cout << "Node " << nodeId << " got DO_WORK message" << endl;
+
+        pthread_mutex_lock( &waitForToken );
         int totalsize = readint(socket);
         int params[totalsize];
         for (int i =0 ; i < totalsize ; ++i)
@@ -196,9 +202,12 @@ void * thread_conn_handler(void * arg){
                value += readByte(params[i]);
         }
         writeByte( destinationAddr, value );
+        pthread_mutex_unlock( &waitForToken );
 
     }
     else if( message == PRINT){
+
+        pthread_mutex_lock( &waitForToken );
         cout << "Node " << nodeId << " got PRINT message" << endl;
         int memLoc = readint(socket);
         int value = readByte(memLoc);
@@ -206,6 +215,8 @@ void * thread_conn_handler(void * arg){
 
 		// print things out
 		cout << "Value " << value << " at mem.location " << memLoc << endl;
+        pthread_mutex_unlock( &waitForToken );
+
     }
     else if( message == READ){
         cout << "Node " << nodeId << " got READ message" << endl;
@@ -229,39 +240,6 @@ void * thread_conn_handler(void * arg){
     else if( message == TOKEN ){
         tokenReceived();
         cout << "Node " << nodeId << " has the token" << endl;
-    }
-
-
-
-// Proabaly dont' want anything after this line
-
-    else if( message == TOKEN_WANT){
-        cout << "Node " << nodeId << " got TOKEN_WANT message" << endl;
-
-        if (hasToken && currentState == TOKEN_FREE)
-        {
-            // release token
-            hasToken = false;
-            sendint(socket, TOKEN_FREE);
-        }
-    }
-    else if( message == TOKEN_HELD){
-        cout << "Node " << nodeId << " got TOKEN_HELD message" << endl;
-
-        if (currentState == TOKEN_WANT)
-        {
-            sendint(socket, TOKEN_WANT);
-        }
-    }
-    else if( message == TOKEN_FREE){
-        cout << "Node " << nodeId << " got TOKEN_FREE message" << endl;
-
-        if (!hasToken && currentState == TOKEN_WANT)
-        {
-            currentState = TOKEN_HELD;
-            hasToken = true;
-        }
-
     }
     else if( message == PING){
         cout << "Node " << nodeId << " got PING message" << endl;
