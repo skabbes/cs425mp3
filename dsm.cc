@@ -152,6 +152,15 @@ void * thread_conn_handler(void * arg){
     else if( message == RELEASE_LOCK){
         cout << "Node " << nodeId << " got RELEASE_LOCK message" << endl;
         // do other stuff before actually unlocking, like update variables and such which were modified
+		 
+		 // Update the actual bytes with cache
+		 map<int, int>::iterator it;
+     	 for ( it=myBytes.begin() ; it != myBytes.end(); it++ )
+		 {
+				int memAddr = it->first();
+				myBytes[memAddr] = modified[memAddr];
+		 }	
+
         unlock();
     }
     else if( message == DO_WORK){
@@ -211,7 +220,7 @@ void * thread_conn_handler(void * arg){
 				// store the value
 				modified[memLoc] = storeValue;
 		  } else {
-				// otherwise, send it back
+				// otherwise, go to the node that has
 				
 				// *** Not sure if this is necessary ***
 				int otherSocket = setup_client("localhost", otherBytes[memLoc]);
