@@ -9,6 +9,7 @@ enum {
     WRITE,
     QUIT,
     PING,
+    TOKEN,
     TOKEN_WANT,
     TOKEN_HELD,
     TOKEN_FREE

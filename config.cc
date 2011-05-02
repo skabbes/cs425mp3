@@ -1,6 +1,8 @@
 #include "config.h"
 #include <iostream>
 #include <fstream>
+#include <cstring>
+
 using namespace std;
 
 // read membership.config file and parse data to idList and portList

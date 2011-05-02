@@ -88,6 +88,8 @@ int main(int argc, char ** argv){
 		}
 	 }
     
+    mutual_exclusion_init(nodeList, portList, nodeId); 
+
     socklen_t sin_size;
     struct sockaddr_storage their_addr;
     char s[INET6_ADDRSTRLEN];
@@ -105,7 +107,7 @@ int main(int argc, char ** argv){
         }
 
         inet_ntop(their_addr.ss_family, get_in_addr((struct sockaddr *)&their_addr), s, sizeof s);
-        cout << "Node " << nodeId << " got connection from " << s << endl;
+        //cout << "Node " << nodeId << " got connection from " << s << endl;
 
         // prepare argument for thread
         int * arg = new int(new_fd);
@@ -122,30 +124,13 @@ void * thread_conn_handler(void * arg){
     int message = readint( socket );
     if( message == ACQUIRE_LOCK){
         cout << "Node " << nodeId << " got ACQUIRE_LOCK message" << endl;
-
-        // if already has the token
-        if (hasToken)
-        {
-            // acquire the token
-            currentState = TOKEN_HELD;
-        } else {
-            // notify that this node wants the token
-            sendint(socket, TOKEN_WANT);
-        }
-       
-         
+        lock();
+        cout << "Node " << nodeId << " has acquired lock " << endl;
     }
     else if( message == RELEASE_LOCK){
         cout << "Node " << nodeId << " got RELEASE_LOCK message" << endl;
- 
-       if (hasToken)
-        {
-            // release lock and token
-            hasToken = false;
-            currentState = TOKEN_FREE;
-            // notify that token is now free
-            sendint(socket, TOKEN_FREE);
-        }
+        // do other stuff before actually unlocking, like update variables and such which were modified
+        unlock();
     }
     else if( message == DO_WORK){
         cout << "Node " << nodeId << " got DO_WORK message" << endl;
@@ -191,6 +176,12 @@ void * thread_conn_handler(void * arg){
     else if( message == QUIT){
         cout << "Node " << nodeId << " got QUIT message" << endl;
     }
+
+    else if( message == TOKEN ){
+        tokenReceived();
+        cout << "Node " << nodeId << " has the token" << endl;
+    }
+
     else if( message == TOKEN_WANT){
         cout << "Node " << nodeId << " got TOKEN_WANT message" << endl;
 
@@ -227,4 +218,5 @@ void * thread_conn_handler(void * arg){
         cout << "Unrecognized message" << endl;
     }
     close(socket);
+    return NULL;
 }

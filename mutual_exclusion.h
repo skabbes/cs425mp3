@@ -11,5 +11,6 @@ void mutual_exclusion_init();
 void * tokenPasser( void * arg );
 void lock();
 void unlock();
+void tokenReceived();
 
 #endif
