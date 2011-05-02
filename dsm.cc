@@ -197,28 +197,8 @@ void * thread_conn_handler(void * arg){
     else if( message == READ){
         cout << "Node " << nodeId << " got READ message" << endl;
         int memLoc = readint(socket);
-        // Check if this node has this memory address
-        int indexMemAddr = hasMemoryAddr(nodeId, memLoc, byteList);
-
-        if (indexMemAddr != -1)
-        {
-				// fetch value and send it back
-            int memAddr = byteList[indexMemAddr];
-				int value = myBytes[memAddr];		// we fetch from myBytes not the cache, aren't we?
-            sendint(socket, value);  
-        } else {
-				// ask other node and send it back
-				/**
-					I'm not sure if this is necessary
-
-				int otherSocket = setup_client("localhost",otherBytes[memLoc]);
-				sendint(otherSocket, READ);
-				sendint(otherSocket, memLoc);
-				int value = readint(otherSocket);
-				sendint(socket, value);
-				close(otherSocket);
-				**/
-		  }
+        int value = readByte( memLoc );
+        sendint(socket, value);
     }
     else if( message == WRITE){
         cout << "Node " << nodeId << " got WRITE message" << endl;
