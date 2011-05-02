@@ -166,9 +166,6 @@ void * thread_conn_handler(void * arg){
         int value = params[totalsize-1];
 		  // add value to to mem location
 
-
-		  //sendint(socket, 
-		  // store result to the next param
     }
     else if( message == PRINT){
         cout << "Node " << nodeId << " got PRINT message" << endl;
@@ -177,6 +174,16 @@ void * thread_conn_handler(void * arg){
     else if( message == READ){
         cout << "Node " << nodeId << " got READ message" << endl;
         int memLoc = readint(socket);
+        // Check if this node has this memory address
+        int indexMemAddr = hasMemoryAddr(nodeId, memLoc, byteList);
+
+        if (indexMemAddr != -1)
+        {
+            // send back value at memaddr How???
+				
+            //sendint(socket, MAP_VALUE); 
+            sendint(socket, byteList[indexMemAddr]);  // Send back to map address
+        }
     }
     else if( message == WRITE){
         cout << "Node " << nodeId << " got WRITE message" << endl;
@@ -191,6 +198,10 @@ void * thread_conn_handler(void * arg){
         tokenReceived();
         cout << "Node " << nodeId << " has the token" << endl;
     }
+
+
+
+// Proabaly dont' want anything after this line
 
     else if( message == TOKEN_WANT){
         cout << "Node " << nodeId << " got TOKEN_WANT message" << endl;
