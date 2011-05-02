@@ -22,6 +22,7 @@ int main(int argc, char ** argv);
 pid_t launchDsm(int nodeId);
 bool processCommand(stringstream &is);
 void processCommand(string command);
+void pingAll();
 
 
 // Main function
@@ -39,7 +40,19 @@ int main(int argc, char ** argv){
 	 {
 		pid[i] = launchDsm(idList[i]);
 	 }
-     sleep(5);
+
+	 // don't send commands until all nodes are up
+	 for (unsigned int i = 0; i < portList.size(); ++i)
+	 {
+      int clientSocket = 2;	// 2 means failed to connect
+      while (clientSocket == 2)
+      {
+         clientSocket = setup_client("localhost", portList[i]);	
+         sendint(clientSocket, PING);
+         // wait 100 millis for node to come up
+         if (clientSocket == 2) usleep(100 *1000);
+      }
+	 }
 	 
 
     // read lines from command file and issue commands
@@ -53,24 +66,23 @@ int main(int argc, char ** argv){
 		// Should I wait until the command is completely executed???
 		processCommand(commandList[i]);
 	}
-	// read from command line
-	/**
-	 string input;				// Command input
-	 bool shouldQuit = false;
-	 while( cin && !shouldQuit )
+
+    int mutexMessages = 0;
+    int totalMessages = 0;
+	 // don't send commands until all nodes are up
+	 for (unsigned int i = 0; i < portList.size(); ++i)
 	 {
-        stringstream is (stringstream::in | stringstream::out);
-        getline(cin, input);
-        is << input;
-        shouldQuit = processCommand(is);
-    }**/
+      int clientSocket = setup_client("localhost", portList[i]);	
+      sendint(clientSocket, QUIT);
+      mutexMessages += readint(clientSocket);
+      totalMessages += readint(clientSocket);
+	 }
+    cout << "Total Messages Sent: " << totalMessages << endl;
+    cout << "\tMutex Messages: " << mutexMessages << endl;
+    cout << "\tDSM Messages: " << totalMessages - mutexMessages << endl;
+    pingAll();
 
-	while(1)
-   {
-
-   }
-
-    return 0;
+   return 0;
 }
 
 /**
@@ -111,10 +123,10 @@ void processCommand(string command)
 		// release a previously held rock
 		sendint(targetSocket, RELEASE_LOCK);
 
-	} else if (exeComm == DO_WORK)
+	} else if (exeComm == ADD)
 	{
 		// Add values stored at shared memory
-		sendint(targetSocket, DO_WORK);
+		sendint(targetSocket, ADD);
 		sendint(targetSocket, results.size() - 3);	// send the number of total of parameters
 		// send parameters (List of mem. locations)
 		for (unsigned int i=3; i < results.size(); ++i)
@@ -134,6 +146,16 @@ void processCommand(string command)
 	}
 	close(targetSocket);
 
+}
+
+void pingAll(){
+	 // don't send commands until all nodes are up
+	 for (unsigned int i = 0; i < portList.size(); ++i)
+	 {
+      int clientSocket = 2;	// 2 means failed to connect
+      clientSocket = setup_client("localhost", portList[i]);	
+      if( clientSocket != 2 ) sendint(clientSocket, PING);
+	 }
 }
 
 /**

@@ -3,6 +3,7 @@
 #include <vector>
 #include <sstream>
 #include <map>
+#include <queue>
 
 #include <cstdlib>
 #include <cstdio>
@@ -32,12 +33,25 @@ int main(int argc, char ** argv);
 void  * thread_conn_handler( void * arg );
 int readByte(int addr);
 void writeByte(int addr, int value);
+void processQueue();
+void printMemory();
 
 
 
 // NODE variables / properties
 int nodeId;
-pthread_mutex_t waitForToken = PTHREAD_MUTEX_INITIALIZER; // token
+bool shouldQuit = false;
+
+extern int MESSAGES_SENT;
+extern int MUTEX_MESSAGES_SENT;
+
+pthread_mutex_t waitForToken = PTHREAD_MUTEX_INITIALIZER;
+
+// mutex protecting the commandQueue
+pthread_mutex_t commandMutex = PTHREAD_MUTEX_INITIALIZER;
+
+// a queue of commands to be executed once a lock is acquired
+queue< vector<int> > commandQueue;
 
 // a data "cache" for unmodified bytes (memory_address -> value)
 map<int, int> unmodified;
@@ -52,8 +66,11 @@ map<int, int> myBytes;
 map<int, int> otherBytes;
 
 
-vector<int> nodeList, portList, socketList;		// keep track of node, port , and socket
+vector<int> nodeList, portList;		// keep track of node, port
 int server, port;						// keep track of socket and port this nodeId owns
+
+// not part of the mutual exclusion, just a flag telling us if we have it or not
+bool hasToken = false;
 
 /**
 * Main function
@@ -68,7 +85,7 @@ int main(int argc, char ** argv){
 
     nodeId = atoi(argv[1]);
 
-     cout << "Started DSM with id=" << nodeId << endl;
+     cout << "Started DSM node with id=" << nodeId << endl;
 
      // read membership.conf and determine what port to run on (including all other nodes)
 	 readMembershipConfig(nodeList, portList);
@@ -108,12 +125,10 @@ int main(int argc, char ** argv){
 			while (clientSocket == 2)
 			{
 				clientSocket = setup_client("localhost", portList[i]);	
-                sendint(clientSocket, PING);
-				if (clientSocket == 2) sleep(1);	// wait for connecting node to be active
+            sendint(clientSocket, PING);
+            // wait 100 millis for node to come up
+				if (clientSocket == 2) usleep(100 *1000);
 			}
-			socketList.push_back(clientSocket);	// store socket that we are connecting to 
-		} else {
-			socketList.push_back(server);		// this node
 		}
 	 }
     
@@ -124,7 +139,7 @@ int main(int argc, char ** argv){
     char s[INET6_ADDRSTRLEN];
 
 	// I'm wondering why we don't need to accept()?? but the socket is connected
-	while(true)
+	while( !shouldQuit )
 	{
 		 // accept() socket operation on non socket????
         sin_size = sizeof their_addr;
@@ -155,21 +170,18 @@ void * thread_conn_handler(void * arg){
     if( message == ACQUIRE_LOCK){
         cout << "Node " << nodeId << " got ACQUIRE_LOCK message" << endl;
         lock();
-
         pthread_mutex_unlock( &waitForToken );
-        pthread_mutex_unlock( &waitForToken );
-        pthread_mutex_unlock( &waitForToken );
-        pthread_mutex_unlock( &waitForToken );
-        pthread_mutex_unlock( &waitForToken );
-        pthread_mutex_unlock( &waitForToken );
+        hasToken = true;
         cout << "Node " << nodeId << " has acquired lock " << endl;
+        processQueue();
     }
     else if( message == RELEASE_LOCK){
-        cout << "Node " << nodeId << " got RELEASE_LOCK message" << endl;
+       cout << "Node " << nodeId << " got RELEASE_LOCK message" << endl;
 
-         // don't release a token without actuall having it!
-         pthread_mutex_lock( &waitForToken );
-        cout << "Node " << nodeId << " is executing RELEASE_LOCK message" << endl;
+       // don't release a token without actuall having it!
+       pthread_mutex_lock( &waitForToken );
+       processQueue();
+       hasToken = false;
 
 		 // Update the actual bytes with our cache by sending messages
 		 map<int, int>::iterator it;
@@ -177,72 +189,81 @@ void * thread_conn_handler(void * arg){
 		 {
 				int memAddr = it->first;
 				int value = it->second;
-                int port = otherBytes[memAddr];
-                int socket = setup_client("localhost", port);
-                sendint(socket, WRITE);
-                sendint(socket, value);
-                close(socket);
+            int port = otherBytes[memAddr];
+            int socket = setup_client("localhost", port);
+            sendint(socket, WRITE);
+            sendint(socket, memAddr);
+            sendint(socket, value);
+            close(socket);
 		 }	
 
-         // clear "cache" maps
-         modified.erase( modified.begin(), modified.end() );
+       // clear "cache" maps
+       modified.erase( modified.begin(), modified.end() );
 
-         // we don't need to send messages to modify the actual unmodifed bytes
-         unmodified.erase( unmodified.begin(), unmodified.end() );
-         unlock();
+       // we don't need to send messages to modify the actual unmodifed bytes
+       unmodified.erase( unmodified.begin(), unmodified.end() );
+       cout << "Node " << nodeId << " has released lock" << endl;
+       unlock();
     }
-    else if( message == DO_WORK){
+    else if( message == ADD){
 
-        cout << "Node " << nodeId << " got DO_WORK message" << endl;
-        pthread_mutex_lock( &waitForToken );
-        cout << "Node " << nodeId << " is executing do work" << endl;
+        cout << "Node " << nodeId << " got ADD message" << endl;
         int totalsize = readint(socket);
-        int params[totalsize];
+
+        vector<int> command;
+        command.push_back( ADD );
         for (int i =0 ; i < totalsize ; ++i)
         {
-               params[i] = readint(socket);
+               command.push_back( readint(socket) );
         }
 
-        int destinationAddr = params[0];
-        int value = params[totalsize-1];
-        for (int i=1; i<totalsize-1; ++i)
-        {
-               value += readByte(params[i]);
-        }
-        writeByte( destinationAddr, value );
-        cout << "Node " << nodeId << " is done do work" << endl;
-        pthread_mutex_unlock( &waitForToken );
+        // add this command to the queue
+        pthread_mutex_lock( &commandMutex );
+        commandQueue.push( command );
+        pthread_mutex_unlock( &commandMutex );
 
+        if( hasToken ) processQueue();
     }
     else if( message == PRINT){
-
         cout << "Node " << nodeId << " got PRINT message" << endl;
-        pthread_mutex_lock( &waitForToken );
-        cout << "Node " << nodeId << " is executing PRINT message" << endl;
         int memLoc = readint(socket);
-        cout << "Printing something " << memLoc << endl;
-        int value = readByte(memLoc);
-        cout << "Reading bytes at " << memLoc << endl;
 
-		// print things out
-		cout << "Value " << value << " at mem.location " << memLoc << endl;
-        pthread_mutex_unlock( &waitForToken );
+        vector<int> command;
+        command.push_back( PRINT );
+        command.push_back( memLoc );
 
+        // add this command to the queue
+        pthread_mutex_lock( &commandMutex );
+        commandQueue.push( command );
+        pthread_mutex_unlock( &commandMutex );
+
+        if( hasToken ) processQueue();
+    }
+    else if( message == QUIT ){
+
+        vector<int> command;
+        command.push_back( QUIT );
+        command.push_back( socket );
+
+        // add this command to the queue
+        pthread_mutex_lock( &commandMutex );
+        commandQueue.push( command );
+        pthread_mutex_unlock( &commandMutex );
+
+        // all we have to do is quit
+        if( commandQueue.size() == 1 ) processQueue();
+        // break early so that the socket isn't closed
+        return NULL;
     }
     else if( message == READ){
-        cout << "Node " << nodeId << " got READ message" << endl;
         int memLoc = readint(socket);
         int value = readByte( memLoc );
         sendint(socket, value);
     }
     else if( message == WRITE){
-        cout << "Node " << nodeId << " got WRITE message" << endl;
-
 		  int memLoc = readint(socket);	// where to store	(memAddr)
-		  int storeValue = readint(socket);	// what to store (value)
-		  writeByte(memLoc, storeValue);
-
-			
+		  int value= readint(socket);	// what to store (value)
+		  writeByte(memLoc, value);
     }
     else if( message == QUIT){
         cout << "Node " << nodeId << " got QUIT message" << endl;
@@ -250,10 +271,8 @@ void * thread_conn_handler(void * arg){
 
     else if( message == TOKEN ){
         tokenReceived();
-        cout << "Node " << nodeId << " has the token" << endl;
     }
     else if( message == PING){
-        cout << "Node " << nodeId << " got PING message" << endl;
 
     }
     else{
@@ -274,12 +293,10 @@ void writeByte(int addr, int value){
         return;
     }
 
-    // have I cached it, if so, get it out of the friggin cache, and into modified
+    // have I cached it, if so, get it out of the friggin cache
     it = unmodified.find(addr);
     if( it != unmodified.end() ){
         unmodified.erase( it );
-        modified[addr] = value;
-        return;
     }
 
 
@@ -323,4 +340,51 @@ int readByte(int addr){
         return value; 
     }
     return -1;
+}
+
+void processQueue(){
+   pthread_mutex_lock( &commandMutex );
+
+   while( !commandQueue.empty() ){
+      vector<int> params = commandQueue.front();
+      int command = params[0];
+
+      if( command == PRINT ){
+         int addr = params[1];
+         int value = readByte( addr );
+         cout << "Node " << nodeId << " printing " << value << " at memory location " << addr << endl;
+      } else if (command == ADD){
+         cout << "Node " << nodeId << " is performing ADD" << endl;
+         int destinationAddr = params[1];
+         int value = params[ params.size() - 1];
+         for (unsigned int i=2;i<params.size()-1; ++i)
+         {
+            value += readByte( params[i] );
+         }
+         writeByte( destinationAddr, value );
+      } else if( command == QUIT ){
+         int socket = params[1];
+         cout << "Messages " << MESSAGES_SENT << endl;
+         cout << "Mutex Messages " << MUTEX_MESSAGES_SENT << endl;
+         sendint(socket, MUTEX_MESSAGES_SENT);
+         sendint(socket, MESSAGES_SENT);
+         shouldQuit = true;
+      }
+
+      // actually remove that command from the queue
+      commandQueue.pop();
+   }
+
+   pthread_mutex_unlock( &commandMutex );
+}
+
+void printMemory(){
+       cout << "memory for node " << nodeId << endl;
+		 map<int, int>::iterator it;
+     	 for ( it=myBytes.begin() ; it != myBytes.end(); it++ )
+		 {
+				int memAddr = it->first;
+				int value = it->second;
+            cout << "memory[" << memAddr << "] = " << value << endl;
+		 }	
 }

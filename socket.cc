@@ -19,6 +19,8 @@
 #include <iostream>
 using namespace std;
 
+int MESSAGES_SENT = 0;
+
 #include "socket.h"
 
 #define BACKLOG 20
@@ -201,7 +203,7 @@ int setup_client(const char * hostname, int port){
  * http://beej.us/guide/bgnet/output/html/multipage/clientserver.html
  */
 int setup_client(const char * hostname, const char * port){
-
+   MESSAGES_SENT++;
 	int sockfd;
 	struct addrinfo hints, *servinfo, *p;
 	int rv;

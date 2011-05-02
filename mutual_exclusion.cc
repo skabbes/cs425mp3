@@ -8,7 +8,12 @@
 #include "messages.h"
 #include "socket.h"
 
+// amount of delay before the token is passed along in milliseconds
+#define TOKEN_DELAY 500
+
 using namespace std;
+
+int MUTEX_MESSAGES_SENT = 0;
 
 pthread_mutex_t token = PTHREAD_MUTEX_INITIALIZER; // token
 int nextPort;
@@ -39,11 +44,9 @@ void mutual_exclusion_init( vector<int> const & nodes, vector<int> const & ports
 
      // actually, we just care about the next port
      nextPort = ports[nextIndex];
-     cout << "Node " << id << "'s next node is " << nodes[nextIndex] << endl;
 
      if( minNode == id ){
          // only the minimum node will be unlocked
-         cout << "Node id = " << id << " has the token" << endl;
          tokenReceived();
      } else {
          // only the minimum node will be unlocked
@@ -58,7 +61,7 @@ void tokenReceived(){
     pthread_mutex_unlock( &token );
 
     // potentially wait some time?
-    sleep(1);
+    usleep( TOKEN_DELAY * 1000 );
 
     // I think mutex maintain a queue for first come first serve ordering
     // but need to double check on that
@@ -66,6 +69,7 @@ void tokenReceived(){
 
     // send token along to next guy
     int socket = setup_client("localhost", nextPort);
+    MUTEX_MESSAGES_SENT++;
     sendint(socket,  TOKEN);
     close( socket );
 }
