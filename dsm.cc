@@ -31,7 +31,7 @@ using namespace std;
 int main(int argc, char ** argv);
 void  * thread_conn_handler( void * arg );
 int readByte(int addr);
-void writeBye(int addr, int value);
+void writeByte(int addr, int value);
 
 
 
@@ -158,24 +158,32 @@ void * thread_conn_handler(void * arg){
     }
     else if( message == RELEASE_LOCK){
         cout << "Node " << nodeId << " got RELEASE_LOCK message" << endl;
-        // do other stuff before actually unlocking, like update variables and such which were modified
-		 
-		 // Update the actual bytes with cache
-		/**
+
+		 // Update the actual bytes with our cache by sending messages
 		 map<int, int>::iterator it;
-     	 for ( it=myBytes.begin() ; it != myBytes.end(); it++ )
+     	 for ( it=modified.begin() ; it != modified.end(); it++ )
 		 {
-				int memAddr = it->first();
-				myBytes[memAddr] = modified[memAddr];
+				int memAddr = it->first;
+				int value = it->second;
+                int port = otherBytes[memAddr];
+                int socket = setup_client("localhost", port);
+                sendint(socket, WRITE);
+                sendint(socket, value);
+                close(socket);
 		 }	
-**/
-        unlock();
+
+         // clear "cache" maps
+         modified.erase( modified.begin(), modified.end() );
+
+         // we don't need to send messages to modify the actual unmodifed bytes
+         unmodified.erase( unmodified.begin(), unmodified.end() );
+         unlock();
     }
     else if( message == DO_WORK){
 
         cout << "Node " << nodeId << " got DO_WORK message" << endl;
         int totalsize = readint(socket);
-        int params[totalsize];			// keep track of nodes given
+        int params[totalsize];
         for (int i =0 ; i < totalsize ; ++i)
         {
                params[i] = readint(socket);
@@ -193,6 +201,7 @@ void * thread_conn_handler(void * arg){
     else if( message == PRINT){
         cout << "Node " << nodeId << " got PRINT message" << endl;
         int memLoc = readint(socket);
+        int value = readByte(memLoc);
     }
     else if( message == READ){
         cout << "Node " << nodeId << " got READ message" << endl;
@@ -280,7 +289,7 @@ void * thread_conn_handler(void * arg){
 }
 
 // abstracts writing to a byte, updates the local copies as necessary
-void writeBye(int addr, int value){
+void writeByte(int addr, int value){
     map<int, int>::iterator it;
 
     // do I have it?
