@@ -169,7 +169,15 @@ void * thread_conn_handler(void * arg){
     }
     else if( message == WRITE){
         cout << "Node " << nodeId << " got WRITE message" << endl;
+		  int memLoc = readint(socket);
+		  
+		  int indexMemAddr = hasMemoryAddr(nodeId,memLoc, byteList);
 
+		  if (indexMemAddr != -1)
+		  {
+				// store the value
+				
+		  }
 			
     }
     else if( message == QUIT){
