@@ -154,12 +154,22 @@ void * thread_conn_handler(void * arg){
 
     if( message == ACQUIRE_LOCK){
         cout << "Node " << nodeId << " got ACQUIRE_LOCK message" << endl;
-        pthread_mutex_unlock( &waitForToken );
         lock();
+
+        pthread_mutex_unlock( &waitForToken );
+        pthread_mutex_unlock( &waitForToken );
+        pthread_mutex_unlock( &waitForToken );
+        pthread_mutex_unlock( &waitForToken );
+        pthread_mutex_unlock( &waitForToken );
+        pthread_mutex_unlock( &waitForToken );
         cout << "Node " << nodeId << " has acquired lock " << endl;
     }
     else if( message == RELEASE_LOCK){
         cout << "Node " << nodeId << " got RELEASE_LOCK message" << endl;
+
+         // don't release a token without actuall having it!
+         pthread_mutex_lock( &waitForToken );
+        cout << "Node " << nodeId << " is executing RELEASE_LOCK message" << endl;
 
 		 // Update the actual bytes with our cache by sending messages
 		 map<int, int>::iterator it;
@@ -179,15 +189,13 @@ void * thread_conn_handler(void * arg){
 
          // we don't need to send messages to modify the actual unmodifed bytes
          unmodified.erase( unmodified.begin(), unmodified.end() );
-
-         pthread_mutex_lock( &waitForToken );
          unlock();
     }
     else if( message == DO_WORK){
 
         cout << "Node " << nodeId << " got DO_WORK message" << endl;
-
         pthread_mutex_lock( &waitForToken );
+        cout << "Node " << nodeId << " is executing do work" << endl;
         int totalsize = readint(socket);
         int params[totalsize];
         for (int i =0 ; i < totalsize ; ++i)
@@ -202,16 +210,19 @@ void * thread_conn_handler(void * arg){
                value += readByte(params[i]);
         }
         writeByte( destinationAddr, value );
+        cout << "Node " << nodeId << " is done do work" << endl;
         pthread_mutex_unlock( &waitForToken );
 
     }
     else if( message == PRINT){
 
-        pthread_mutex_lock( &waitForToken );
         cout << "Node " << nodeId << " got PRINT message" << endl;
+        pthread_mutex_lock( &waitForToken );
+        cout << "Node " << nodeId << " is executing PRINT message" << endl;
         int memLoc = readint(socket);
+        cout << "Printing something " << memLoc << endl;
         int value = readByte(memLoc);
-		// wait until get token TODO
+        cout << "Reading bytes at " << memLoc << endl;
 
 		// print things out
 		cout << "Value " << value << " at mem.location " << memLoc << endl;
@@ -305,6 +316,7 @@ int readByte(int addr){
         int port = it->second;
         int socket = setup_client("localhost", port);
         sendint(socket, READ);
+        sendint(socket, addr);
         int value = readint(socket);
         unmodified[addr] = value;
         close(socket);
