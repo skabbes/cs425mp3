@@ -179,22 +179,46 @@ void * thread_conn_handler(void * arg){
 
         if (indexMemAddr != -1)
         {
-            // send back value at memaddr How???
-				
-            //sendint(socket, MAP_VALUE); 
-            sendint(socket, byteList[indexMemAddr]);  // Send back to map address
-        }
+				// fetch value and send it back
+            int memAddr = byteList[indexMemAddr];
+				int value = myBytes[memAddr];		// we fetch from myBytes not the cache, aren't we?
+            sendint(socket, value);  
+        } else {
+				// ask other node and send it back
+				/**
+					I'm not sure if this is necessary
+
+				int otherSocket = setup_client("localhost",otherBytes[memLoc]);
+				sendint(otherSocket, READ);
+				sendint(otherSocket, memLoc);
+				int value = readint(otherSocket);
+				sendint(socket, value);
+				close(otherSocket);
+				**/
+		  }
     }
     else if( message == WRITE){
         cout << "Node " << nodeId << " got WRITE message" << endl;
-		  int memLoc = readint(socket);
-		  
+
+		  int memLoc = readint(socket);	// where to store	(memAddr)
+		  int storeValue = readint(socket);	// what to store (value)
+
 		  int indexMemAddr = hasMemoryAddr(nodeId,memLoc, byteList);
 
+			// if this node has this mem addr
 		  if (indexMemAddr != -1)
 		  {
 				// store the value
+				modified[memLoc] = storeValue;
+		  } else {
+				// otherwise, send it back
 				
+				// *** Not sure if this is necessary ***
+				int otherSocket = setup_client("localhost", otherBytes[memLoc]);
+				sendint(otherSocket, WRITE);
+				sendint(otherSocket, memLoc);
+				sendint(otherSocket, storeValue);
+				close(otherSocket);
 		  }
 			
     }
